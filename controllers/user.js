@@ -1,6 +1,6 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const userDetailCollection = require('../../../musicart-backend/models/userModel');
+const userDetailCollection = require('../models/userModel');
 
 const validateUser = async (req, res, next) => {
     // console.log('In validate user');

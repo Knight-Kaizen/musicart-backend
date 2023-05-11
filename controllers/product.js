@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const productDetailCollection = require('../../../musicart-backend/models/productModel');
+const productDetailCollection = require('../models/productModel');
 
 
 
