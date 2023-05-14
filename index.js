@@ -18,7 +18,7 @@ app.use(bodyParser.json());
 app.use(cors());
 
 
-const port = 8001;
+const port = process.env.PORT ||8001;
 connectDB();
 
 customCheck = (req, res, next)=>{
