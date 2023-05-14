@@ -6,7 +6,7 @@ const validateUser = async (req, res, next) => {
     // console.log('In validate user');
     try {
         //check for name, email, mobile and password.
-        //Since we will be having onwe will valily one user date if the user is dup licate or notby email & mobile
+        //Since we will be having onwe will valily one user date if the user is duplicate or not by email & mobile
         const { name, email, mobile, password } = req.body;
         if (!name || !email || !mobile || !password) {
             res.status(400).send('Empty Input Feilds');
@@ -48,16 +48,13 @@ const createUser = async (req, res) => {
 
 const matchCredentials = async (userDetailObj) => {
     try {
-        // console.log('in match credentials');
         const { email, mobile, password } = userDetailObj;
         let user = {};
         if (email) {
             user = await userDetailCollection.findOne({ email });
-            // console.log('check email', user);
         }
         else if (mobile) {
             user = await userDetailCollection.findOne({ mobile });
-            // console.log('check mobile', user);
         }
 
         if (user && await (bcrypt.compare(password, user.password))) {
@@ -68,7 +65,7 @@ const matchCredentials = async (userDetailObj) => {
         }
     }
     catch (err) {
-        // console.error('Error in matchCredentials Helper', err);
+        console.error('Error in matchCredentials Helper', err);
         return false;
     }
 
@@ -146,7 +143,6 @@ const loginUser = async (req, res) => {
         if (detailsOK) {
             const token = await generateToken(req.body);
             const userdetails = await getUserDetails(req.body);
-            // console.log('details ok', userdetails);
             const { name, _id } = userdetails;
             res.send({
                 _id,
@@ -166,10 +162,7 @@ const loginUser = async (req, res) => {
 }
 
 const verifyToken = async (req, res, next) => {
-    // let token = req.headers.authorization;
     let token = req.headers.authorization;
-    // console.log('checking full token', token)
-    // console.log('checking token', token)
     if (!token)
     res.status(400).send('Token not received');
     else {
@@ -187,16 +180,12 @@ const verifyToken = async (req, res, next) => {
 
 const addItemToCart = async (req, res) => {
     try {
-        // console.log('checking user bo/dy', req.body)
         const userId = req.params.id;
-        // console.log(productId);
         const productId = req.body.body.productId;
         const currUser = await userDetailCollection.findOne({ _id: userId });
-        // console.log('user jiska cart bharna hai', currUser);
         const userCart = currUser.cartItems;
         userCart.push(productId);
-        // console.log('current cart', userCart);
-        // console.log(currItems);
+       
         await userDetailCollection.updateOne({ _id: userId }, {
             $set: {
                 cartItems: userCart
@@ -249,12 +238,6 @@ const getUserCart = async(req, res)=>{
     try{
         const _id  = req.params.id;
         const user = await userDetailCollection.findOne({_id});
-        // console.log(user);
-        // const userCart = [];
-        // // for(let i = 0; user.cartItems.length; i++ ){
-        // //     userCart.push(user.cartItems[i]);
-        // // }
-        // console.log(typeof(user.cartItems), user.cartItems)
         res.status(200).send(`${JSON.stringify(user.cartItems)}`);
 
     }

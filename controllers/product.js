@@ -6,7 +6,6 @@ const productDetailCollection = require('../models/productModel');
 
 const addProduct = async(req, res)=>{
     try{
-        // console.log(req.body);
         const {name, description, price, stars, color, type, company, details, inStock, img_url}  = req.body;
         const newProduct  = new productDetailCollection({
             name, description, price, stars, color, type, company, details, inStock, img_url
