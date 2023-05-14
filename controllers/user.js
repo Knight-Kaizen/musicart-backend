@@ -28,8 +28,8 @@ const validateUser = async (req, res, next) => {
     }
 }
 
-const createUser = async(req, res)=>{
-    try{
+const createUser = async (req, res) => {
+    try {
         let encryptedPassword = await bcrypt.hash(req.body.password, 10);
         const newUser = new userDetailCollection({
             name: req.body.name,
@@ -41,35 +41,49 @@ const createUser = async(req, res)=>{
         const result = await newUser.save();
         res.send('User registered sucessfully! Head on to login page');
     }
-    catch(err){
+    catch (err) {
         res.status(400).send(`Error in creating user, ${err}`);
     }
 }
 
 const matchCredentials = async (userDetailObj) => {
     try {
-        const { email, password } = userDetailObj;
-        const user = await userDetailCollection.findOne({ email });
+        // console.log('in match credentials');
+        const { email, mobile, password } = userDetailObj;
+        let user = {};
+        if (email) {
+            user = await userDetailCollection.findOne({ email });
+            // console.log('check email', user);
+        }
+        else if (mobile) {
+            user = await userDetailCollection.findOne({ mobile });
+            // console.log('check mobile', user);
+        }
+
         if (user && await (bcrypt.compare(password, user.password))) {
             return true;
         }
-        // if (user && password) {
-        //     return true;
-        // }
         else {
             return false;
         }
     }
     catch (err) {
-        // console.error('Error in matchCredentials Helper', err);
+        console.error('Error in matchCredentials Helper', err);
+        return false;
     }
 
 
 }
 const generateToken = async (userDetailObj) => {
     try {
-        const { email } = userDetailObj;
-        const user = await userDetailCollection.findOne({ email });
+        const { email, mobile } = userDetailObj;
+        
+        if(email){
+            user = await userDetailCollection.findOne({ email });
+        }
+        else {
+            user = await userDetailCollection.findOne({ mobile });
+        }
         const token = jwt.sign(
             { user_id: user._id, email },
             process.env.TOKEN_KEY,
@@ -81,57 +95,109 @@ const generateToken = async (userDetailObj) => {
     }
     catch (err) {
         // console.log('error in generating token: ', err);
+        return {
+            name: '',
+            _id: null,
+            token: null
+        }
     }
 }
-const getRecruiterDetails = async(userDetailObj)=>{
-    const {email} = userDetailObj;
-    const user = await userDetailCollection.findOne({email});
+const getUserDetails = async (userDetailObj) => {
+    const { email, mobile } = userDetailObj;
+    let user = '';
+    if(email)
+    user = await userDetailCollection.findOne({ email });
+    else 
+    user = await userDetailCollection.findOne({ mobile });
     return user;
 }
 
-const loginUser = async(req, res)=>{
-    try{
-        const { email, password } = req.body;
-        if (!email || !password) {
-            res.send('Empty user inputs!');
+const loginUser = async (req, res) => {
+    try {
+        const { email, mobile, password } = req.body;
+        let detailsOK = false;
+        if (!password || (!email && !mobile)) {
+            res.status(400).send('Empty user inputs!');
+            return;
         }
-        const isEmailExist = await userDetailCollection.findOne({ email });
-        if (isEmailExist) {
-            const detailsOK = await matchCredentials(req.body);
-            if (detailsOK) {
-                const token = await generateToken(req.body);
-                const recruiterdetails = await getRecruiterDetails(req.body);
-                const {name, _id} = recruiterdetails;
-                res.send({
-                    _id,
-                    name,
-                    token
-                });
-            }
-            else {
-                res.status(400).send('Wrong Email or Password!');
+        //Check weather user is logging with email or mobile.
+        if (email) {
+            //logging with email 
+            const isEmailExist = await userDetailCollection.findOne({ email });
+            
+            if (isEmailExist) {
+                detailsOK = await matchCredentials({ email, password });
+            } else {
+                res.status(400).send('Email does not exist!');
+                return;
             }
         }
         else {
-            res.status(400).send('User does not exist');
+            //logging with mobile
+            const isMobileExist = await userDetailCollection.findOne({ mobile });
+            if (isMobileExist) {
+                detailsOK = await matchCredentials({ mobile, password });
+            } else {
+                res.status(400).send('Mobile number does not exist!');
+                return;
+            }
+        }
+
+        if (detailsOK) {
+            const token = await generateToken(req.body);
+            const userdetails = await getUserDetails(req.body);
+            console.log('details ok', userdetails);
+            const { name, _id } = userdetails;
+            res.send({
+                _id,
+                name,
+                token
+            });
+        }
+        else {
+            res.status(400).send('Wrong Email or Password!');
+            return;
         }
     }
-    catch(err){
-        res.status(400).send(`Error in login user: ${err}`);
+    catch (err) {
+    res.status(400).send(`Error in login user: ${err}`);
+    return;
+}
+}
+
+const verifyToken = async (req, res, next) => {
+    // let token = req.headers.authorization;
+    let token = req.headers.authorization;
+    // console.log('checking full token', token)
+    console.log('checking token', token)
+    if (!token)
+    res.status(400).send('Token not received');
+    else {
+        try {
+            token = token.slice(7);
+            console.log('checking token', token);
+            const decodedToken = await jwt.verify(token, process.env.TOKEN_KEY);
+            next();
+        }
+        catch (err) {
+            res.status(400).send(`Error in verification, ${err}`);
+        }
     }
 }
-const addItemToCart = async(req, res)=>{
-    try{
+
+const addItemToCart = async (req, res) => {
+    try {
+        console.log('checking user body', req.body)
         const userId = req.params.id;
         // console.log(productId);
-        const productId = req.body.productId;
-        const currUser = await userDetailCollection.findOne({_id: userId});
+        const productId = req.body.body.productId;
+        const currUser = await userDetailCollection.findOne({ _id: userId });
         // console.log('user jiska cart bharna hai', currUser);
         const userCart = currUser.cartItems;
         userCart.push(productId);
         // console.log('current cart', userCart);
         // console.log(currItems);
-        await userDetailCollection.updateOne({_id: userId}, {
+        await userDetailCollection.updateOne({ _id: userId }, {
             $set: {
                 cartItems: userCart
             }
@@ -139,32 +205,35 @@ const addItemToCart = async(req, res)=>{
 
         res.send('Item added to cart');
     }
-    catch(err){
+    catch (err) {
         res.status(400).send(`Error in adding item to cart ${err}`);
     }
 }
-const removeItemFromCart = async(req, res)=>{
-    try{
-        const userId = req.params.id; 
+const removeItemFromCart = async (req, res) => {
+    try {
+        const userId = req.params.id;
         const productId = req.body.productId; //userId
-        const currUser = await userDetailCollection.findOne({_id: userId});
+        const currUser = await userDetailCollection.findOne({ _id: userId });
         const userCart = currUser.cartItems;
-        if(productId == '0000'){
+        if (productId == '0000') {
             //remove all items from cart
-            await userDetailCollection.updateOne({_id: userId}, {
+            await userDetailCollection.updateOne({ _id: userId }, {
                 $set: {
                     cartItems: []
                 }
             })
 
         }
-        else{
+        else {
             //remove specific item from cart
-            const newCart = userCart.filter((item)=>{
-                if(item != productId)
-                return item;
+            const removed = 0;
+            const newCart = userCart.filter((item) => {
+                if (item != productId && !removed){
+                    removed = 1;
+                    return item;
+                }
             })
-            await userDetailCollection.updateOne({_id: userId}, {
+            await userDetailCollection.updateOne({ _id: userId }, {
                 $set: {
                     cartItems: newCart
                 }
@@ -172,15 +241,35 @@ const removeItemFromCart = async(req, res)=>{
         }
         res.send('Deletion from cart sucess');
     }
-    catch(err){
+    catch (err) {
         res.status(400).send(`Error in removing items, ${err}`);
     }
+}
+const getUserCart = async(req, res)=>{
+    try{
+        const _id  = req.params.id;
+        const user = await userDetailCollection.findOne({_id});
+        // console.log(user);
+        // const userCart = [];
+        // // for(let i = 0; user.cartItems.length; i++ ){
+        // //     userCart.push(user.cartItems[i]);
+        // // }
+        // console.log(typeof(user.cartItems), user.cartItems)
+        res.status(200).send(`${JSON.stringify(user.cartItems)}`);
+
+    }
+    catch(err){
+        res.status(400).send(`Error in getting cart, ${err}`);
+    }
+
 }
 
 module.exports = {
     validateUser,
     createUser,
     loginUser,
+    verifyToken,
     addItemToCart,
+    getUserCart,
     removeItemFromCart
 }

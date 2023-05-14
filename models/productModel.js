@@ -8,7 +8,7 @@ const productSchema = new mongoose.Schema({
     color: String, 
     type: String,
     company: String,
-    details: String,
+    details: [],
     inStock: Boolean,
     img_url : []
 

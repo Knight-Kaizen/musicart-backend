@@ -101,10 +101,21 @@ const getAllProducts = async(req, res)=>{
     }
 }
 
+const getProductDetails = async(req, res)=>{
+    try{
+        const _id = req.params.id;
+        const result = await productDetailCollection.find({_id});
+        res.status(200).send(result);
+    }
+    catch(err){
+        res.status(400).send(`Error in fetching details, ${err}`);
+    }
+}
 
 
 
 module.exports = {
     addProduct,
-    getAllProducts
+    getAllProducts,
+    getProductDetails 
 }
