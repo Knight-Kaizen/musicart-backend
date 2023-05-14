@@ -15,7 +15,7 @@ const addProduct = async(req, res)=>{
         res.send('product added sucessfully');
     }
     catch(err){
-        console.log('Error in addProduct', err);
+        // console.log('Error in addProduct', err);
         res.status(401).send('Error in adding product', err);
     }
 }
@@ -96,7 +96,7 @@ const getAllProducts = async(req, res)=>{
         
     }
     catch(err){
-        console.log('Error in getAllProducts', err);
+        // console.log('Error in getAllProducts', err);
         res.status(400).send('Error in fetching products', err);
     }
 }

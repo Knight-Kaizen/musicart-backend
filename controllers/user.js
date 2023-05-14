@@ -68,7 +68,7 @@ const matchCredentials = async (userDetailObj) => {
         }
     }
     catch (err) {
-        console.error('Error in matchCredentials Helper', err);
+        // console.error('Error in matchCredentials Helper', err);
         return false;
     }
 
@@ -146,7 +146,7 @@ const loginUser = async (req, res) => {
         if (detailsOK) {
             const token = await generateToken(req.body);
             const userdetails = await getUserDetails(req.body);
-            console.log('details ok', userdetails);
+            // console.log('details ok', userdetails);
             const { name, _id } = userdetails;
             res.send({
                 _id,
@@ -169,13 +169,13 @@ const verifyToken = async (req, res, next) => {
     // let token = req.headers.authorization;
     let token = req.headers.authorization;
     // console.log('checking full token', token)
-    console.log('checking token', token)
+    // console.log('checking token', token)
     if (!token)
     res.status(400).send('Token not received');
     else {
         try {
             token = token.slice(7);
-            console.log('checking token', token);
+            // console.log('checking token', token);
             const decodedToken = await jwt.verify(token, process.env.TOKEN_KEY);
             next();
         }
@@ -187,7 +187,7 @@ const verifyToken = async (req, res, next) => {
 
 const addItemToCart = async (req, res) => {
     try {
-        console.log('checking user body', req.body)
+        // console.log('checking user bo/dy', req.body)
         const userId = req.params.id;
         // console.log(productId);
         const productId = req.body.body.productId;
