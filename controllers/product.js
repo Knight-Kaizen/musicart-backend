@@ -96,7 +96,6 @@ const getAllProducts = async(req, res)=>{
         
     }
     catch(err){
-        // console.log('Error in getAllProducts', err);
         res.status(400).send('Error in fetching products', err);
     }
 }
